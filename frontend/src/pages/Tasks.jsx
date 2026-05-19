@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useTasks from "../hooks/useTasks";
 import TaskItem from "../components/Task/TaskItem";
 import TaskFormModal from "../components/Task/TaskFormModal";
-import { Plus, ArrowLeft, Filter } from "lucide-react";
+import { Plus, ArrowLeft, Filter, Trash2 } from "lucide-react";
 import { CATEGORIES } from "../utils/categoryUtils";
 import EmptyState from "../components/EmptyState";
 
@@ -13,16 +13,22 @@ export default function Tasks() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [taskError, setTaskError] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
 
   /** --- Handlers --- */
-  const handleToggle = (task) => {
-    updateTask(task._id, {
+ const handleToggle = async (task) => {
+  try {
+    await updateTask(task._id, {
       status: task.status === "Completed" ? "Due" : "Completed",
     });
-  };
+  } catch (error) {
+    console.error("Failed to update task:", error);
+  }
+};
 
   const handleSubmit = async (data) => {
+    setTaskError("");
     try {
       if (editingTask) {
         await updateTask(editingTask._id, data);
@@ -33,7 +39,7 @@ export default function Tasks() {
       setIsModalOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to save task");
+      setTaskError(err.message || "Failed to save task");
     }
   };
 
@@ -263,8 +269,13 @@ export default function Tasks() {
       {isModalOpen && (
         <TaskFormModal
           task={editingTask}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setTaskError("");
+          }}
           onSubmit={handleSubmit}
+          errorMessage={taskError}
+          onError={setTaskError}
         />
       )}
     </div>
